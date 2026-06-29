@@ -4,6 +4,7 @@ import math
 from jsonschema import validate
 
 from trust_score.schema import TRUST_SCORE_SCHEMA
+from trust_score.tracing import tracer
 
 
 def load_input(file_path: str) -> dict:
@@ -33,13 +34,24 @@ def normalize_weights(weights: list) -> list:
     return normalized
 
 def validate_weights(weights: list) -> list:
- 
-    total = sum(weights)
 
-    if not math.isclose(total, 1.0, rel_tol=1e-9):
-        return normalize_weights(weights)
+    with tracer.start_as_current_span("Weight Normalization") as span:
 
-    return weights
+        total = sum(weights)
+
+        span.set_attribute("original_weight_sum", total)
+
+        if not math.isclose(total, 1.0, rel_tol=1e-9):
+
+            normalized = normalize_weights(weights)
+
+            span.set_attribute("weights_normalized", True)
+
+            return normalized
+
+        span.set_attribute("weights_normalized", False)
+
+        return weights
 
 def validate_input(file_path: str):
 
