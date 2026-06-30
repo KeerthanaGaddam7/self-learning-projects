@@ -10,7 +10,7 @@ from trust_score.tracing import tracer
 
 
 def main():
-
+ 
     try:
 
         with tracer.start_as_current_span("Trust Score Request") as parent_span:
